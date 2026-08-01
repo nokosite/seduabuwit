@@ -1,0 +1,36 @@
+{
+  "name": "Duitku Callback Test",
+  "requests": [
+    {
+      "name": "Test Callback - Payment Success",
+      "method": "POST",
+      "url": "http://localhost:5173/api/duitku/callback",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "merchantCode": "DS17148",
+        "amount": "104500",
+        "merchantOrderId": "SUMBANGAN-SUKARELA-1234567890",
+        "productDetail": "Pembayaran Sumbangan Sukarela",
+        "additionalParam": "",
+        "paymentCode": "BC",
+        "resultCode": "00",
+        "merchantUserId": "",
+        "reference": "DK1234567890",
+        "signature": "CALCULATE_MD5_SIGNATURE"
+      },
+      "notes": [
+        "Signature Formula: MD5(merchantCode + amount + merchantOrderId + apiKey)",
+        "Example: MD5('DS17148' + '104500' + 'SUMBANGAN-SUKARELA-1234567890' + 'd4dff63d806898d3f02315e894b0063c')",
+        "",
+        "Steps:",
+        "1. Generate VA number dari aplikasi",
+        "2. Copy merchantOrderId",
+        "3. Calculate signature dengan formula di atas",
+        "4. Send POST request ini",
+        "5. Check Firestore - payment status harus berubah jadi 'paid'"
+      ]
+    }
+  ]
+}

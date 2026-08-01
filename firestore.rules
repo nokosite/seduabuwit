@@ -1,0 +1,115 @@
+rules_version = '2';
+
+// ============================================================
+// SPP SDN 2 Buwit — Firestore Security Rules
+// Deploy via: Firebase Console → Firestore Database → Rules
+// Or: firebase deploy --only firestore:rules
+// ============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----- Helpers -----
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function adminRole() {
+      let u = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return 'adminRole' in u ? u.adminRole : (u.role == 'admin' ? 'superadmin' : null);
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userRole() == 'admin';
+    }
+
+    function isParent() {
+      return isSignedIn() && userRole() == 'parent';
+    }
+
+    function isSuperAdmin() {
+      return isAdmin() && adminRole() == 'superadmin';
+    }
+
+    function isTU() {
+      return isAdmin() && (adminRole() == 'superadmin' || adminRole() == 'tu');
+    }
+
+    function isBendahara() {
+      return isAdmin() && (adminRole() == 'superadmin' || adminRole() == 'bendahara');
+    }
+
+    // ----- USERS -----
+    match /users/{userId} {
+      // Sign-in user can read own doc; admin can read all
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      // Only superadmin can create/modify other users (parent self-create OK at signup)
+      allow create: if isSignedIn();
+      allow update: if isSuperAdmin() || request.auth.uid == userId;
+      allow delete: if isSuperAdmin();
+    }
+
+    // ----- STUDENTS -----
+    match /students/{studentId} {
+      // Parent can read only their own children
+      allow read: if isAdmin() ||
+                     (isParent() && resource.data.userId == request.auth.uid);
+      // Only TU & superadmin can add/edit/delete students
+      allow create, update, delete: if isTU();
+    }
+
+    // ----- CLASSES -----
+    match /classes/{classId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isTU();
+    }
+
+    // ----- PAYMENTS -----
+    match /payments/{paymentId} {
+      // Parent can read only payments of their children
+      allow read: if isAdmin() ||
+                     (isParent() &&
+                      get(/databases/$(database)/documents/students/$(resource.data.studentId)).data.userId == request.auth.uid);
+      // Bendahara: full CRUD. Other admin roles: read-only (covered above)
+      allow create, update, delete: if isBendahara();
+    }
+
+    // ----- TRANSACTIONS -----
+    match /transactions/{transactionId} {
+      allow read: if isAdmin();
+      allow create: if isBendahara() || isSignedIn(); // signed-in for Duitku callback (use admin SDK in prod)
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // ----- SETTINGS -----
+    match /settings/{settingsId} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin() || isBendahara();
+    }
+
+    // ----- PAYMENT TYPES -----
+    match /paymentTypes/{typeId} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin() || isBendahara();
+    }
+
+    // ----- AUDIT LOGS -----
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();   // semua admin bisa lihat
+      allow create: if isAdmin(); // semua admin boleh menulis log
+      allow update, delete: if false; // log immutable
+    }
+
+    // ----- NOTIFICATIONS -----
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+  }
+}

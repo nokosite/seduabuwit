@@ -1,0 +1,8 @@
+# Robots.txt for Sumbangan Sukarela SDN 2 Buwit
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://sumbangan-sukarela-sdn2buwit.vercel.app/sitemap.xml

@@ -1,0 +1,22 @@
+{
+  "name": "Sumbangan Sukarela SDN 2 Buwit",
+  "short_name": "Sumbangan Sukarela",
+  "description": "Sistem Pembayaran Sumbangan Sukarela Online SDN 2 Buwit",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#10b981",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}
